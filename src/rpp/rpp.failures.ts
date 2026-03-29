@@ -82,6 +82,16 @@ export const RPP_FAILURE_DESCRIPTIONS: Record<RPPFailureCode, RPPFailureDescript
     description: "A DerivedRef.from_steps is an empty array. A derived reference that points to no steps is equivalent to a self-claim with no grounding — the provenance chain does not exist.",
     example: "response.references has { type: 'derived', from_steps: [] } — this declares derivation but names no source steps.",
   },
+  ACTION_NO_EVIDENCE: {
+    severity: "error",
+    description: "The action stage has no evidence reference. Actions must be grounded in observable reality — a rule or method alone is not sufficient to justify what is being done.",
+    example: "Action stage has only { type: 'rule', rule_id: 'RUL-002' } but no evidence ref showing what file/source/result grounds the action.",
+  },
+  RESPONSE_MISSING_GROUNDED_STEP: {
+    severity: "error",
+    description: "The response DerivedRef.from_steps does not include the decision or action step. Responses must trace to a decision or action — tracing only to interpretation or reasoning is insufficient because those steps do not represent concluded actions.",
+    example: "from_steps: ['s-interpretation'] — interpretation establishes context but does not authorize action. Include 's-decision' or 's-action'.",
+  },
 }
 
 const HARD_FAILURE_CODES = new Set<RPPFailureCode>([
@@ -93,6 +103,8 @@ const HARD_FAILURE_CODES = new Set<RPPFailureCode>([
   "INVALID_REFERENCE",
   "DANGLING_PROVENANCE_LINK",
   "EMPTY_PROVENANCE_LINK",
+  "ACTION_NO_EVIDENCE",
+  "RESPONSE_MISSING_GROUNDED_STEP",
 ])
 
 export function isHardFailure(code: RPPFailureCode): boolean {

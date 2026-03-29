@@ -73,6 +73,8 @@ export type RPPFailureCode =
   | "CIRCULAR_REFERENCE"
   | "DANGLING_PROVENANCE_LINK"
   | "EMPTY_PROVENANCE_LINK"
+  | "ACTION_NO_EVIDENCE"
+  | "RESPONSE_MISSING_GROUNDED_STEP"
 
 export type RPPFailure = {
   code: RPPFailureCode

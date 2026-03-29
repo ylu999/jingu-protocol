@@ -117,6 +117,22 @@ export function validateRPP(record: RPPRecord): RPPValidationResult {
     }
   }
 
+  // --- Check 6a: ACTION_NO_EVIDENCE ---
+  // The action stage must have at least one evidence reference.
+  // A rule or method justifies *why* an action is taken; evidence grounds *what*
+  // observable reality it acts on. Without evidence, action is unjustified in fact.
+  const actionStep = record.steps.find((s) => s.stage === "action")
+  if (actionStep) {
+    const hasEvidence = (actionStep.references ?? []).some((r) => r.type === "evidence")
+    if (!hasEvidence) {
+      allIssues.push({
+        code: "ACTION_NO_EVIDENCE",
+        stage: "action",
+        detail: `Action stage has no evidence reference. Actions must be grounded in observable reality (file, tool_result, log, etc.) — a rule or method alone does not suffice.`,
+      })
+    }
+  }
+
   // --- Check 6: UNJUSTIFIED_DECISION ---
   const decisionStep = record.steps.find((s) => s.stage === "decision")
   if (decisionStep) {
@@ -181,6 +197,30 @@ export function validateRPP(record: RPPRecord): RPPValidationResult {
   const stepById = new Map<string, CognitiveStep>()
   for (const step of record.steps) {
     if (step.id) stepById.set(step.id, step)
+  }
+
+  // --- Check 8b: RESPONSE_MISSING_GROUNDED_STEP ---
+  // When step ids are present, the response derived ref must include at least
+  // one step that is a decision or action stage. Tracing only to interpretation
+  // or reasoning means the response is grounded in "I thought about it" but not
+  // in "I decided" or "I acted" — which is insufficient for an action-authorizing response.
+  //
+  // Only enforced when step ids exist (backward compat) and a derived ref is present.
+  if (stepById.size > 0) {
+    for (const ref of record.response.references) {
+      if (ref.type !== "derived" || ref.from_steps.length === 0) continue
+      const hasDecisionOrAction = ref.from_steps.some((id) => {
+        const s = stepById.get(id)
+        return s?.stage === "decision" || s?.stage === "action"
+      })
+      if (!hasDecisionOrAction) {
+        allIssues.push({
+          code: "RESPONSE_MISSING_GROUNDED_STEP",
+          stage: "response",
+          detail: `Response DerivedRef.from_steps [${ref.from_steps.join(", ")}] does not include a decision or action step. The response must trace to a step that concludes or acts — not only to interpretation or reasoning.`,
+        })
+      }
+    }
   }
 
   for (const ref of record.response.references) {
