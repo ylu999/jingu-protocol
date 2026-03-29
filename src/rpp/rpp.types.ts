@@ -20,18 +20,24 @@ export type MethodRef = {
 }
 
 /**
- * DerivedRef: structural claim that this content is derived from prior steps
- * in the same RPP record. Required in response.references to establish
- * machine-checkable traceability — replaces fragile keyword matching.
+ * DerivedRef: structural claim that this content is derived from specific
+ * prior steps in the same RPP record. `from_steps` must list the step ids
+ * of the steps this content is derived from — the gate validates that every
+ * listed id exists in record.steps and that those steps have references.
+ *
+ * This replaces fragile keyword matching with a machine-checkable provenance
+ * graph edge: response → step(s) → references → evidence/rule/method.
  */
 export type DerivedRef = {
   type: "derived"
+  from_steps: string[]
   supports: string
 }
 
 export type Reference = EvidenceRef | RuleRef | MethodRef | DerivedRef
 
 export type CognitiveStep = {
+  id?: string   // optional step identifier — required to be referenced by DerivedRef.from_steps
   stage: "interpretation" | "reasoning" | "decision" | "action"
   content: string[]
   references: Reference[]
@@ -65,6 +71,7 @@ export type RPPFailureCode =
   | "INVALID_REFERENCE"
   | "SUPPORTS_TOO_VAGUE"
   | "CIRCULAR_REFERENCE"
+  | "DANGLING_PROVENANCE_LINK"
 
 export type RPPFailure = {
   code: RPPFailureCode

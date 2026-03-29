@@ -72,6 +72,11 @@ export const RPP_FAILURE_DESCRIPTIONS: Record<RPPFailureCode, RPPFailureDescript
     description: "An action step proposes actions that exceed the scope authorized by the preceding decision stage.",
     example: "Decision stage authorizes 'update config file' but action stage also proposes 'delete the database'.",
   },
+  DANGLING_PROVENANCE_LINK: {
+    severity: "error",
+    description: "A DerivedRef.from_steps entry references a step id that does not exist in the RPP record, or references a step that has no references of its own. The provenance chain is broken.",
+    example: "response.references has { type: 'derived', from_steps: ['s3'] } but no step has id: 's3'.",
+  },
 }
 
 const HARD_FAILURE_CODES = new Set<RPPFailureCode>([
@@ -81,6 +86,7 @@ const HARD_FAILURE_CODES = new Set<RPPFailureCode>([
   "UNTRACEABLE_RESPONSE",
   "UNJUSTIFIED_DECISION",
   "INVALID_REFERENCE",
+  "DANGLING_PROVENANCE_LINK",
 ])
 
 export function isHardFailure(code: RPPFailureCode): boolean {

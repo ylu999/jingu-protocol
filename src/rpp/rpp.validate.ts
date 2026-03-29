@@ -152,18 +152,13 @@ export function validateRPP(record: RPPRecord): RPPValidationResult {
   }
 
   // --- Check 8: UNTRACEABLE_RESPONSE ---
-  // Structural check: response must contain at least one reference of type "derived".
-  // A DerivedRef is an explicit structural claim that the response follows from
-  // the cognitive chain above — it is the machine-checkable link between response
-  // and reasoning. This replaces the prior keyword-match heuristic which:
-  //   (a) stripped all non-ASCII characters (breaking non-English content)
-  //   (b) used a magic length threshold (>= 3 chars) with no semantic meaning
-  //   (c) could be trivially gamed by repeating any word from a prior step
+  // Structural check: response must contain at least one DerivedRef.
+  // DerivedRef is the provenance graph edge: response → step(s) → references.
   if (record.response.references.length === 0) {
     allIssues.push({
       code: "UNTRACEABLE_RESPONSE",
       stage: "response",
-      detail: `Response has no references. Add at least one { type: "derived", supports: "..." } reference to establish that the response follows from the cognitive chain.`,
+      detail: `Response has no references. Add at least one { type: "derived", from_steps: [...], supports: "..." } to establish the provenance chain.`,
     })
   } else {
     const hasDerived = record.response.references.some((ref) => ref.type === "derived")
@@ -171,8 +166,42 @@ export function validateRPP(record: RPPRecord): RPPValidationResult {
       allIssues.push({
         code: "UNTRACEABLE_RESPONSE",
         stage: "response",
-        detail: `Response references contain no "derived" type. Add at least one { type: "derived", supports: "..." } to structurally link the response to the prior reasoning steps.`,
+        detail: `Response references contain no "derived" type. Add { type: "derived", from_steps: [...], supports: "..." } to link the response to the prior reasoning steps.`,
       })
+    }
+  }
+
+  // --- Check 9: DANGLING_PROVENANCE_LINK ---
+  // When a DerivedRef lists from_steps, each listed step id must exist in the
+  // record and that step must have at least one reference (otherwise the chain
+  // terminates in a step with no evidence, which is not a valid provenance node).
+  //
+  // Backward compat: if all steps lack ids, from_steps cannot be validated and
+  // this check is skipped. Verification only fires when step ids are present.
+  const stepById = new Map<string, CognitiveStep>()
+  for (const step of record.steps) {
+    if (step.id) stepById.set(step.id, step)
+  }
+
+  if (stepById.size > 0) {
+    for (const ref of record.response.references) {
+      if (ref.type !== "derived") continue
+      for (const stepId of ref.from_steps) {
+        const target = stepById.get(stepId)
+        if (!target) {
+          allIssues.push({
+            code: "DANGLING_PROVENANCE_LINK",
+            stage: "response",
+            detail: `DerivedRef.from_steps references step id "${stepId}" which does not exist in this RPP record.`,
+          })
+        } else if (!target.references || target.references.length === 0) {
+          allIssues.push({
+            code: "DANGLING_PROVENANCE_LINK",
+            stage: "response",
+            detail: `DerivedRef.from_steps references step "${stepId}" (stage: "${target.stage}") which has no references — provenance chain terminates without evidence.`,
+          })
+        }
+      }
     }
   }
 
