@@ -92,6 +92,11 @@ export const RPP_FAILURE_DESCRIPTIONS: Record<RPPFailureCode, RPPFailureDescript
     description: "The response DerivedRef.from_steps does not include the decision or action step. Responses must trace to a decision or action — tracing only to interpretation or reasoning is insufficient because those steps do not represent concluded actions.",
     example: "from_steps: ['s-interpretation'] — interpretation establishes context but does not authorize action. Include 's-decision' or 's-action'.",
   },
+  STEP_DERIVED_REF_FORBIDDEN: {
+    severity: "error",
+    description: "Step references must not contain derived refs. DerivedRef is only valid in response.references. A step whose grounding is itself a derived claim has no grounded evidence/rule/method.",
+    example: "A step has references: [{ type: 'derived', from_steps: ['s-other'] }] — steps must use evidence, rule, or method references to ground their content, not derived refs.",
+  },
 }
 
 const HARD_FAILURE_CODES = new Set<RPPFailureCode>([
@@ -105,6 +110,7 @@ const HARD_FAILURE_CODES = new Set<RPPFailureCode>([
   "EMPTY_PROVENANCE_LINK",
   "ACTION_NO_EVIDENCE",
   "RESPONSE_MISSING_GROUNDED_STEP",
+  "STEP_DERIVED_REF_FORBIDDEN",
 ])
 
 export function isHardFailure(code: RPPFailureCode): boolean {

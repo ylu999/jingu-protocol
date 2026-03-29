@@ -115,6 +115,17 @@ export function validateRPP(record: RPPRecord): RPPValidationResult {
         allIssues.push(failure)
       }
     }
+
+    // --- Check 10: STEP_DERIVED_REF_FORBIDDEN ---
+    for (const ref of step.references ?? []) {
+      if (ref.type === "derived") {
+        allIssues.push({
+          code: "STEP_DERIVED_REF_FORBIDDEN",
+          stage,
+          detail: `Stage "${stage}" contains a reference of type "derived". DerivedRef is only valid in response.references. Use evidence, rule, or method references within steps.`,
+        })
+      }
+    }
   }
 
   // --- Check 6a: ACTION_NO_EVIDENCE ---

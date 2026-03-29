@@ -75,6 +75,7 @@ export type RPPFailureCode =
   | "EMPTY_PROVENANCE_LINK"
   | "ACTION_NO_EVIDENCE"
   | "RESPONSE_MISSING_GROUNDED_STEP"
+  | "STEP_DERIVED_REF_FORBIDDEN"
 
 export type RPPFailure = {
   code: RPPFailureCode
