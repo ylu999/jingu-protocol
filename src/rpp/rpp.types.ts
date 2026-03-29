@@ -19,7 +19,17 @@ export type MethodRef = {
   supports: string
 }
 
-export type Reference = EvidenceRef | RuleRef | MethodRef
+/**
+ * DerivedRef: structural claim that this content is derived from prior steps
+ * in the same RPP record. Required in response.references to establish
+ * machine-checkable traceability — replaces fragile keyword matching.
+ */
+export type DerivedRef = {
+  type: "derived"
+  supports: string
+}
+
+export type Reference = EvidenceRef | RuleRef | MethodRef | DerivedRef
 
 export type CognitiveStep = {
   stage: "interpretation" | "reasoning" | "decision" | "action"

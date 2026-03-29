@@ -27,8 +27,8 @@ export const RPP_FAILURE_DESCRIPTIONS: Record<RPPFailureCode, RPPFailureDescript
   },
   UNTRACEABLE_RESPONSE: {
     severity: "error",
-    description: "The final response cannot be traced back to any step in the cognitive chain — no references link response to prior reasoning.",
-    example: "Response says 'use method X' but no reasoning or decision step mentions method X.",
+    description: "The response has no structural link to the cognitive chain. Response references must include at least one { type: \"derived\" } entry declaring that the response follows from the prior reasoning steps.",
+    example: "Response references contain only evidence refs pointing to external files, but no derived ref asserting that the response is grounded in the interpretation/reasoning/decision/action above it.",
   },
   UNJUSTIFIED_DECISION: {
     severity: "error",
@@ -54,8 +54,8 @@ export const RPP_FAILURE_DESCRIPTIONS: Record<RPPFailureCode, RPPFailureDescript
   },
   SUPPORTS_TOO_VAGUE: {
     severity: "warning",
-    description: "A reference's 'supports' field is too generic to meaningfully trace which claim it backs.",
-    example: "EvidenceRef has supports: 'general context' instead of specifying which particular claim it supports.",
+    description: "A reference's 'supports' field is empty. The supports field must state what specific claim this reference backs — even a short phrase is valid, empty is not.",
+    example: "EvidenceRef has supports: '' (empty string). Should be something like 'user request grounding' or 'why this method applies here'.",
   },
   METHOD_NOT_ACTUALLY_USED: {
     severity: "warning",

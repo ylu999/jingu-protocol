@@ -4,6 +4,7 @@ export type {
   EvidenceRef,
   RuleRef,
   MethodRef,
+  DerivedRef,
   Reference,
   CognitiveStep,
   ResponseStep,

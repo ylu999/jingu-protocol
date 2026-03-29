@@ -53,21 +53,7 @@ function validateReference(ref: Reference, stage: CognitiveStep["stage"] | "resp
       }
     }
   }
-  return null
-}
-
-/**
- * Extract the first noun phrase from a string (min 3 chars).
- * Simple heuristic: take the first word of length >= 3.
- */
-function extractFirstKeyPhrase(text: string): string | null {
-  const words = text.split(/\s+/)
-  for (const word of words) {
-    const cleaned = word.replace(/[^a-zA-Z0-9]/g, "")
-    if (cleaned.length >= 3) {
-      return cleaned.toLowerCase()
-    }
-  }
+  // derived refs: no structural fields beyond 'supports' — validated by SUPPORTS_EMPTY below
   return null
 }
 
@@ -86,7 +72,7 @@ export function validateRPP(record: RPPRecord): RPPValidationResult {
     }
   }
 
-  // For checks 2–7, iterate over present steps only
+  // For checks 2–5, iterate over present steps only
   for (const step of record.steps) {
     const stage = step.stage
 
@@ -109,12 +95,15 @@ export function validateRPP(record: RPPRecord): RPPValidationResult {
     }
 
     // --- Check 4: SUPPORTS_TOO_VAGUE (warning) ---
+    // Checks structural completeness: supports must be a non-empty string.
+    // Does NOT check character count — length-based thresholds are string heuristics,
+    // not semantic validation. A one-word supports field is valid; an empty one is not.
     for (const ref of step.references ?? []) {
-      if (ref.supports.length < 10) {
+      if (!ref.supports || ref.supports.trim() === "") {
         allIssues.push({
           code: "SUPPORTS_TOO_VAGUE",
           stage,
-          detail: `Reference in stage "${stage}" has a 'supports' field that is too vague: "${ref.supports}".`,
+          detail: `Reference in stage "${stage}" has an empty 'supports' field. State what claim this reference supports.`,
         })
       }
     }
@@ -163,26 +152,26 @@ export function validateRPP(record: RPPRecord): RPPValidationResult {
   }
 
   // --- Check 8: UNTRACEABLE_RESPONSE ---
-  // Gather all prior step content strings
-  const allPriorContent = record.steps.flatMap((s) => s.content ?? []).map((c) => c.toLowerCase())
-
-  if (record.response.content.length > 0) {
-    let anyTraced = false
-    for (const responseItem of record.response.content) {
-      const keyPhrase = extractFirstKeyPhrase(responseItem)
-      if (keyPhrase !== null) {
-        const traced = allPriorContent.some((priorContent) => priorContent.includes(keyPhrase))
-        if (traced) {
-          anyTraced = true
-          break
-        }
-      }
-    }
-    if (!anyTraced) {
+  // Structural check: response must contain at least one reference of type "derived".
+  // A DerivedRef is an explicit structural claim that the response follows from
+  // the cognitive chain above — it is the machine-checkable link between response
+  // and reasoning. This replaces the prior keyword-match heuristic which:
+  //   (a) stripped all non-ASCII characters (breaking non-English content)
+  //   (b) used a magic length threshold (>= 3 chars) with no semantic meaning
+  //   (c) could be trivially gamed by repeating any word from a prior step
+  if (record.response.references.length === 0) {
+    allIssues.push({
+      code: "UNTRACEABLE_RESPONSE",
+      stage: "response",
+      detail: `Response has no references. Add at least one { type: "derived", supports: "..." } reference to establish that the response follows from the cognitive chain.`,
+    })
+  } else {
+    const hasDerived = record.response.references.some((ref) => ref.type === "derived")
+    if (!hasDerived) {
       allIssues.push({
         code: "UNTRACEABLE_RESPONSE",
         stage: "response",
-        detail: `None of the response content items could be traced back to any prior step's content.`,
+        detail: `Response references contain no "derived" type. Add at least one { type: "derived", supports: "..." } to structurally link the response to the prior reasoning steps.`,
       })
     }
   }
