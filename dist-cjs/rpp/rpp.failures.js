@@ -1,0 +1,129 @@
+"use strict";
+// src/rpp/rpp.failures.ts
+Object.defineProperty(exports, "__esModule", { value: true });
+exports.RPP_FAILURE_DESCRIPTIONS = void 0;
+exports.isHardFailure = isHardFailure;
+exports.RPP_FAILURE_DESCRIPTIONS = {
+    // Hard failures (severity: "error") — block execution
+    MISSING_STAGE: {
+        severity: "error",
+        description: "A required cognitive stage (interpretation, reasoning, decision, or action) is absent from the RPP record.",
+        example: "RPP record has steps for interpretation and decision but omits the reasoning stage entirely.",
+    },
+    EMPTY_CONTENT: {
+        severity: "error",
+        description: "A stage or response step has an empty content array or all content entries are blank strings.",
+        example: "The decision stage has content: [] with no entries explaining what was decided.",
+    },
+    NO_REFERENCES: {
+        severity: "error",
+        description: "A stage or response step that requires references has none, making the output ungrounded.",
+        example: "The response step cites no evidence or rules despite making factual claims.",
+    },
+    UNTRACEABLE_RESPONSE: {
+        severity: "error",
+        description: "The response has no structural link to the cognitive chain. Response references must include at least one { type: \"derived\" } entry declaring that the response follows from the prior reasoning steps.",
+        example: "Response references contain only evidence refs pointing to external files, but no derived ref asserting that the response is grounded in the interpretation/reasoning/decision/action above it.",
+    },
+    UNJUSTIFIED_DECISION: {
+        severity: "error",
+        description: "A decision stage has no supporting rule or evidence reference to justify why this decision was made.",
+        example: "Decision stage selects option B but provides no rule_id or evidence reference explaining the choice.",
+    },
+    INVALID_REFERENCE: {
+        severity: "error",
+        description: "A reference is structurally malformed or points to a non-existent source, rule, or method.",
+        example: "A RuleRef has rule_id: '' (empty string) or an EvidenceRef has a locator that does not match any known document.",
+    },
+    // Soft failures (severity: "warning") — flagged but do not block
+    UNSUPPORTED_CLAIM: {
+        severity: "warning",
+        description: "A content entry makes a factual claim that has no corresponding reference supporting it.",
+        example: "Reasoning stage states 'This pattern is always inefficient' but no evidence reference backs that claim.",
+    },
+    INFERENCE_AS_FACT: {
+        severity: "warning",
+        description: "An inference or assumption is stated as established fact without acknowledging uncertainty.",
+        example: "Content says 'The user intends to deploy to production' without marking it as an inference or listing it in uncertainties.",
+    },
+    SUPPORTS_TOO_VAGUE: {
+        severity: "warning",
+        description: "A reference's 'supports' field is empty. The supports field must state what specific claim this reference backs — even a short phrase is valid, empty is not.",
+        example: "EvidenceRef has supports: '' (empty string). Should be something like 'user request grounding' or 'why this method applies here'.",
+    },
+    METHOD_NOT_ACTUALLY_USED: {
+        severity: "warning",
+        description: "A method_ref is declared in a stage but the method's logic is not reflected in the stage's content.",
+        example: "Stage declares method_ref for 'cost-benefit-analysis' but the content shows no cost or benefit comparison.",
+    },
+    CIRCULAR_REFERENCE: {
+        severity: "warning",
+        description: "Two or more references form a cycle where each claims to support the other with no external grounding.",
+        example: "Step A references step B as evidence, and step B references step A as its justification.",
+    },
+    ACTION_SCOPE_VIOLATION: {
+        severity: "warning",
+        description: "An action step proposes actions that exceed the scope authorized by the preceding decision stage.",
+        example: "Decision stage authorizes 'update config file' but action stage also proposes 'delete the database'.",
+    },
+    DANGLING_PROVENANCE_LINK: {
+        severity: "error",
+        description: "A DerivedRef.from_steps entry references a step id that does not exist in the RPP record, references a step that has no references, or references a step whose references are all 'derived' type (no grounding in evidence/rule/method — the chain terminates in another floating declaration).",
+        example: "response.references has { type: 'derived', from_steps: ['s3'] } but no step has id: 's3', or step 's3' has only { type: 'derived' } refs with no evidence/rule/method.",
+    },
+    EMPTY_PROVENANCE_LINK: {
+        severity: "error",
+        description: "A DerivedRef.from_steps is an empty array. A derived reference that points to no steps is equivalent to a self-claim with no grounding — the provenance chain does not exist.",
+        example: "response.references has { type: 'derived', from_steps: [] } — this declares derivation but names no source steps.",
+    },
+    ACTION_NO_EVIDENCE: {
+        severity: "error",
+        description: "The action stage has no evidence reference. Actions must be grounded in observable reality — a rule or method alone is not sufficient to justify what is being done.",
+        example: "Action stage has only { type: 'rule', rule_id: 'RUL-002' } but no evidence ref showing what file/source/result grounds the action.",
+    },
+    RESPONSE_MISSING_GROUNDED_STEP: {
+        severity: "error",
+        description: "The response DerivedRef.from_steps does not include the decision or action step. Responses must trace to a decision or action — tracing only to interpretation or reasoning is insufficient because those steps do not represent concluded actions.",
+        example: "from_steps: ['s-interpretation'] — interpretation establishes context but does not authorize action. Include 's-decision' or 's-action'.",
+    },
+    STEP_DERIVED_REF_FORBIDDEN: {
+        severity: "error",
+        description: "Step references must not contain derived refs. DerivedRef is only valid in response.references. A step whose grounding is itself a derived claim has no grounded evidence/rule/method.",
+        example: "A step has references: [{ type: 'derived', from_steps: ['s-other'] }] — steps must use evidence, rule, or method references to ground their content, not derived refs.",
+    },
+    UNKNOWN_RULE_ID: {
+        severity: "error",
+        description: "rule_id is not in the project's allowed_rule_ids list.",
+        example: "A RuleRef has rule_id: 'RUL-999' but the project policy only allows ['RUL-001', 'RUL-002'].",
+    },
+    UNKNOWN_METHOD_ID: {
+        severity: "error",
+        description: "method_id is not in the project's allowed_method_ids list.",
+        example: "A MethodRef has method_id: 'XYZ-999' but the project policy only allows ['RCA-001', 'OBS-001'].",
+    },
+    DISALLOWED_EVIDENCE_SOURCE: {
+        severity: "error",
+        description: "evidence source is not in the project's allowed action_evidence_sources list.",
+        example: "Action stage EvidenceRef has source: 'external_api' but the project policy only allows ['file', 'tool_result'].",
+    },
+};
+const HARD_FAILURE_CODES = new Set([
+    "MISSING_STAGE",
+    "EMPTY_CONTENT",
+    "NO_REFERENCES",
+    "UNTRACEABLE_RESPONSE",
+    "UNJUSTIFIED_DECISION",
+    "INVALID_REFERENCE",
+    "DANGLING_PROVENANCE_LINK",
+    "EMPTY_PROVENANCE_LINK",
+    "ACTION_NO_EVIDENCE",
+    "RESPONSE_MISSING_GROUNDED_STEP",
+    "STEP_DERIVED_REF_FORBIDDEN",
+    "UNKNOWN_RULE_ID",
+    "UNKNOWN_METHOD_ID",
+    "DISALLOWED_EVIDENCE_SOURCE",
+]);
+function isHardFailure(code) {
+    return HARD_FAILURE_CODES.has(code);
+}
+//# sourceMappingURL=rpp.failures.js.map
