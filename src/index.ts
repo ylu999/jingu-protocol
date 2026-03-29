@@ -12,6 +12,7 @@ export type {
   RPPFailureCode,
   RPPFailure,
   RPPValidationResult,
+  RPPPolicy,
 } from "./rpp/rpp.types.js"
 
 export type { RPPFailureDescription } from "./rpp/rpp.failures.js"

@@ -97,6 +97,21 @@ export const RPP_FAILURE_DESCRIPTIONS: Record<RPPFailureCode, RPPFailureDescript
     description: "Step references must not contain derived refs. DerivedRef is only valid in response.references. A step whose grounding is itself a derived claim has no grounded evidence/rule/method.",
     example: "A step has references: [{ type: 'derived', from_steps: ['s-other'] }] — steps must use evidence, rule, or method references to ground their content, not derived refs.",
   },
+  UNKNOWN_RULE_ID: {
+    severity: "error",
+    description: "rule_id is not in the project's allowed_rule_ids list.",
+    example: "A RuleRef has rule_id: 'RUL-999' but the project policy only allows ['RUL-001', 'RUL-002'].",
+  },
+  UNKNOWN_METHOD_ID: {
+    severity: "error",
+    description: "method_id is not in the project's allowed_method_ids list.",
+    example: "A MethodRef has method_id: 'XYZ-999' but the project policy only allows ['RCA-001', 'OBS-001'].",
+  },
+  DISALLOWED_EVIDENCE_SOURCE: {
+    severity: "error",
+    description: "evidence source is not in the project's allowed action_evidence_sources list.",
+    example: "Action stage EvidenceRef has source: 'external_api' but the project policy only allows ['file', 'tool_result'].",
+  },
 }
 
 const HARD_FAILURE_CODES = new Set<RPPFailureCode>([
@@ -111,6 +126,9 @@ const HARD_FAILURE_CODES = new Set<RPPFailureCode>([
   "ACTION_NO_EVIDENCE",
   "RESPONSE_MISSING_GROUNDED_STEP",
   "STEP_DERIVED_REF_FORBIDDEN",
+  "UNKNOWN_RULE_ID",
+  "UNKNOWN_METHOD_ID",
+  "DISALLOWED_EVIDENCE_SOURCE",
 ])
 
 export function isHardFailure(code: RPPFailureCode): boolean {

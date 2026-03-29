@@ -76,6 +76,9 @@ export type RPPFailureCode =
   | "ACTION_NO_EVIDENCE"
   | "RESPONSE_MISSING_GROUNDED_STEP"
   | "STEP_DERIVED_REF_FORBIDDEN"
+  | "UNKNOWN_RULE_ID"
+  | "UNKNOWN_METHOD_ID"
+  | "DISALLOWED_EVIDENCE_SOURCE"
 
 export type RPPFailure = {
   code: RPPFailureCode
@@ -87,4 +90,25 @@ export type RPPValidationResult = {
   overall_status: "valid" | "weakly_supported" | "invalid"
   failures: RPPFailure[]
   warnings: RPPFailure[]
+}
+
+/**
+ * RPPPolicy: project-level policy configuration for validateRPP.
+ * All fields are optional. When no policy is provided, validateRPP behaves
+ * identically to the no-policy baseline.
+ */
+export type RPPPolicy = {
+  /** If specified, every rule_id in any RuleRef must appear in this list (UNKNOWN_RULE_ID). */
+  allowed_rule_ids?: string[]
+  /** If specified, every method_id in any MethodRef must appear in this list (UNKNOWN_METHOD_ID). */
+  allowed_method_ids?: string[]
+  /** Override the default hard/soft severity for specific failure codes. */
+  severity_overrides?: Partial<Record<RPPFailureCode, "hard" | "soft">>
+  /** If specified, every evidence source in action-stage EvidenceRefs must appear in this list (DISALLOWED_EVIDENCE_SOURCE). */
+  action_evidence_sources?: string[]
+  /**
+   * Stages that the response DerivedRef must include at least one of.
+   * Defaults to ["decision", "action"] when not specified.
+   */
+  response_must_reference_stages?: Array<"interpretation" | "reasoning" | "decision" | "action">
 }

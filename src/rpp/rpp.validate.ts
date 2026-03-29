@@ -1,6 +1,6 @@
 // src/rpp/rpp.validate.ts
 
-import { RPPRecord, RPPFailure, RPPValidationResult, CognitiveStep, Reference } from "./rpp.types.js"
+import { RPPRecord, RPPFailure, RPPFailureCode, RPPValidationResult, RPPPolicy, CognitiveStep, Reference } from "./rpp.types.js"
 import { isHardFailure } from "./rpp.failures.js"
 
 const REQUIRED_STAGES: Array<CognitiveStep["stage"]> = [
@@ -57,7 +57,7 @@ function validateReference(ref: Reference, stage: CognitiveStep["stage"] | "resp
   return null
 }
 
-export function validateRPP(record: RPPRecord): RPPValidationResult {
+export function validateRPP(record: RPPRecord, policy?: RPPPolicy): RPPValidationResult {
   const allIssues: RPPFailure[] = []
 
   // --- Check 1: MISSING_STAGE ---
@@ -217,18 +217,20 @@ export function validateRPP(record: RPPRecord): RPPValidationResult {
   // in "I decided" or "I acted" — which is insufficient for an action-authorizing response.
   //
   // Only enforced when step ids exist (backward compat) and a derived ref is present.
+  const requiredStages: Array<CognitiveStep["stage"]> =
+    policy?.response_must_reference_stages ?? ["decision", "action"]
   if (stepById.size > 0) {
     for (const ref of record.response.references) {
       if (ref.type !== "derived" || ref.from_steps.length === 0) continue
-      const hasDecisionOrAction = ref.from_steps.some((id) => {
+      const hasRequiredStage = ref.from_steps.some((id) => {
         const s = stepById.get(id)
-        return s?.stage === "decision" || s?.stage === "action"
+        return s !== undefined && requiredStages.includes(s.stage)
       })
-      if (!hasDecisionOrAction) {
+      if (!hasRequiredStage) {
         allIssues.push({
           code: "RESPONSE_MISSING_GROUNDED_STEP",
           stage: "response",
-          detail: `Response DerivedRef.from_steps [${ref.from_steps.join(", ")}] does not include a decision or action step. The response must trace to a step that concludes or acts — not only to interpretation or reasoning.`,
+          detail: `Response DerivedRef.from_steps [${ref.from_steps.join(", ")}] does not include a step with stage in [${requiredStages.join(", ")}]. The response must trace to one of these stages.`,
         })
       }
     }
@@ -282,9 +284,64 @@ export function validateRPP(record: RPPRecord): RPPValidationResult {
     }
   }
 
+  // --- Policy checks (only when policy is provided) ---
+  if (policy) {
+    // UNKNOWN_RULE_ID: rule_id must be in allowed_rule_ids
+    if (policy.allowed_rule_ids && policy.allowed_rule_ids.length > 0) {
+      for (const step of record.steps) {
+        for (const ref of step.references ?? []) {
+          if (ref.type === "rule" && !policy.allowed_rule_ids.includes(ref.rule_id)) {
+            allIssues.push({
+              code: "UNKNOWN_RULE_ID",
+              stage: step.stage,
+              detail: `rule_id "${ref.rule_id}" is not in the project's allowed_rule_ids list: [${policy.allowed_rule_ids.join(", ")}].`,
+            })
+          }
+        }
+      }
+    }
+
+    // UNKNOWN_METHOD_ID: method_id must be in allowed_method_ids
+    if (policy.allowed_method_ids && policy.allowed_method_ids.length > 0) {
+      for (const step of record.steps) {
+        for (const ref of step.references ?? []) {
+          if (ref.type === "method" && !policy.allowed_method_ids.includes(ref.method_id)) {
+            allIssues.push({
+              code: "UNKNOWN_METHOD_ID",
+              stage: step.stage,
+              detail: `method_id "${ref.method_id}" is not in the project's allowed_method_ids list: [${policy.allowed_method_ids.join(", ")}].`,
+            })
+          }
+        }
+      }
+    }
+
+    // DISALLOWED_EVIDENCE_SOURCE: action step evidence sources must be in action_evidence_sources
+    if (policy.action_evidence_sources && policy.action_evidence_sources.length > 0) {
+      const actionStep = record.steps.find((s) => s.stage === "action")
+      if (actionStep) {
+        for (const ref of actionStep.references ?? []) {
+          if (ref.type === "evidence" && !policy.action_evidence_sources.includes(ref.source)) {
+            allIssues.push({
+              code: "DISALLOWED_EVIDENCE_SOURCE",
+              stage: "action",
+              detail: `Evidence source "${ref.source}" in action stage is not in the project's allowed action_evidence_sources list: [${policy.action_evidence_sources.join(", ")}].`,
+            })
+          }
+        }
+      }
+    }
+  }
+
   // --- Compute overall_status ---
-  const failures = allIssues.filter((issue) => isHardFailure(issue.code))
-  const warnings = allIssues.filter((issue) => !isHardFailure(issue.code))
+  // severity_overrides can promote soft failures to hard or demote hard failures to soft.
+  const overrides = policy?.severity_overrides ?? {}
+  const isEffectivelyHard = (code: RPPFailureCode): boolean => {
+    if (code in overrides) return overrides[code] === "hard"
+    return isHardFailure(code)
+  }
+  const failures = allIssues.filter((issue) => isEffectivelyHard(issue.code))
+  const warnings = allIssues.filter((issue) => !isEffectivelyHard(issue.code))
 
   let overall_status: RPPValidationResult["overall_status"]
   if (failures.length > 0) {
