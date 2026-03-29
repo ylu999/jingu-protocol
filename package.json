@@ -1,0 +1,26 @@
+{
+  "name": "@jingu/protocol",
+  "version": "0.1.0",
+  "description": "Shared protocol types for the Jingu system — RPP (Reasoning Provenance Protocol) and related definitions",
+  "type": "module",
+  "main": "./dist/src/index.js",
+  "types": "./dist/src/index.d.ts",
+  "exports": {
+    ".": {
+      "require": "./dist/src/index.js",
+      "import": "./dist/src/index.js",
+      "types": "./dist/src/index.d.ts"
+    }
+  },
+  "files": [
+    "dist",
+    "src"
+  ],
+  "scripts": {
+    "build": "tsc -p tsconfig.json",
+    "test": "node --test dist/src/**/*.test.js"
+  },
+  "devDependencies": {
+    "typescript": "^5.4.0"
+  }
+}
