@@ -74,8 +74,13 @@ export const RPP_FAILURE_DESCRIPTIONS: Record<RPPFailureCode, RPPFailureDescript
   },
   DANGLING_PROVENANCE_LINK: {
     severity: "error",
-    description: "A DerivedRef.from_steps entry references a step id that does not exist in the RPP record, or references a step that has no references of its own. The provenance chain is broken.",
-    example: "response.references has { type: 'derived', from_steps: ['s3'] } but no step has id: 's3'.",
+    description: "A DerivedRef.from_steps entry references a step id that does not exist in the RPP record, references a step that has no references, or references a step whose references are all 'derived' type (no grounding in evidence/rule/method — the chain terminates in another floating declaration).",
+    example: "response.references has { type: 'derived', from_steps: ['s3'] } but no step has id: 's3', or step 's3' has only { type: 'derived' } refs with no evidence/rule/method.",
+  },
+  EMPTY_PROVENANCE_LINK: {
+    severity: "error",
+    description: "A DerivedRef.from_steps is an empty array. A derived reference that points to no steps is equivalent to a self-claim with no grounding — the provenance chain does not exist.",
+    example: "response.references has { type: 'derived', from_steps: [] } — this declares derivation but names no source steps.",
   },
 }
 
@@ -87,6 +92,7 @@ const HARD_FAILURE_CODES = new Set<RPPFailureCode>([
   "UNJUSTIFIED_DECISION",
   "INVALID_REFERENCE",
   "DANGLING_PROVENANCE_LINK",
+  "EMPTY_PROVENANCE_LINK",
 ])
 
 export function isHardFailure(code: RPPFailureCode): boolean {

@@ -183,9 +183,30 @@ export function validateRPP(record: RPPRecord): RPPValidationResult {
     if (step.id) stepById.set(step.id, step)
   }
 
-  if (stepById.size > 0) {
-    for (const ref of record.response.references) {
-      if (ref.type !== "derived") continue
+  for (const ref of record.response.references) {
+    if (ref.type !== "derived") continue
+
+    // --- Check 9a: EMPTY_PROVENANCE_LINK ---
+    // from_steps must name at least one step. An empty array is a self-claim:
+    // it declares derivation but points to nothing — equivalent to no chain at all.
+    if (ref.from_steps.length === 0) {
+      allIssues.push({
+        code: "EMPTY_PROVENANCE_LINK",
+        stage: "response",
+        detail: `DerivedRef.from_steps is empty. List at least one step id that this response derives from.`,
+      })
+      continue
+    }
+
+    // --- Check 9b: DANGLING_PROVENANCE_LINK ---
+    // When step ids are present in the record, each from_steps entry must:
+    //   (1) resolve to an existing step
+    //   (2) that step must have at least one non-derived reference
+    //       (evidence / rule / method) — otherwise the chain terminates in
+    //       another floating declaration, not in actual grounding.
+    //
+    // Backward compat: if no steps have ids, skip resolution check.
+    if (stepById.size > 0) {
       for (const stepId of ref.from_steps) {
         const target = stepById.get(stepId)
         if (!target) {
@@ -194,12 +215,17 @@ export function validateRPP(record: RPPRecord): RPPValidationResult {
             stage: "response",
             detail: `DerivedRef.from_steps references step id "${stepId}" which does not exist in this RPP record.`,
           })
-        } else if (!target.references || target.references.length === 0) {
-          allIssues.push({
-            code: "DANGLING_PROVENANCE_LINK",
-            stage: "response",
-            detail: `DerivedRef.from_steps references step "${stepId}" (stage: "${target.stage}") which has no references — provenance chain terminates without evidence.`,
-          })
+        } else {
+          const hasGroundedRef = (target.references ?? []).some(
+            (r) => r.type === "evidence" || r.type === "rule" || r.type === "method"
+          )
+          if (!hasGroundedRef) {
+            allIssues.push({
+              code: "DANGLING_PROVENANCE_LINK",
+              stage: "response",
+              detail: `DerivedRef.from_steps references step "${stepId}" (stage: "${target.stage}") which has no evidence/rule/method references — the provenance chain terminates in an ungrounded step.`,
+            })
+          }
         }
       }
     }

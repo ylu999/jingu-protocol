@@ -72,6 +72,7 @@ export type RPPFailureCode =
   | "SUPPORTS_TOO_VAGUE"
   | "CIRCULAR_REFERENCE"
   | "DANGLING_PROVENANCE_LINK"
+  | "EMPTY_PROVENANCE_LINK"
 
 export type RPPFailure = {
   code: RPPFailureCode
