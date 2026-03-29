@@ -1,5 +1,5 @@
 {
-  "name": "@jingu/protocol",
+  "name": "jingu-protocol",
   "version": "0.1.0",
   "description": "Shared protocol types for the Jingu system — RPP (Reasoning Provenance Protocol) and related definitions",
   "type": "module",

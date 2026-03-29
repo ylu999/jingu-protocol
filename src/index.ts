@@ -1,4 +1,4 @@
-// src/index.ts — @jingu/protocol public API
+// src/index.ts — jingu-protocol public API
 
 export type {
   EvidenceRef,

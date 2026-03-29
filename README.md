@@ -1,4 +1,4 @@
-# @jingu/protocol
+# jingu-protocol
 
 Shared protocol types for the [Jingu](https://github.com/ylu999/jingu-core) system.
 
@@ -32,7 +32,7 @@ A `pre_tool_use` hook validates the RPP block before any tool runs. Missing or i
 ## Install
 
 ```bash
-npm install @jingu/protocol
+npm install jingu-protocol
 ```
 
 ---
@@ -40,8 +40,8 @@ npm install @jingu/protocol
 ## Quick start
 
 ```typescript
-import { validateRPP } from "@jingu/protocol"
-import type { RPPRecord } from "@jingu/protocol"
+import { validateRPP } from "jingu-protocol"
+import type { RPPRecord } from "jingu-protocol"
 
 const record: RPPRecord = {
   call_id: "call-001",
@@ -153,7 +153,7 @@ export { RPP_FAILURE_DESCRIPTIONS }
 | Package | Role |
 |---------|------|
 | [`jingu-trust-gate`](https://github.com/ylu999/jingu-trust-gate) | Runs `validateRPP` as a `pre_tool_use` hook — blocks tool execution if RPP is missing or invalid |
-| [`jingu-policy-core`](https://github.com/ylu999/jingu-policy-core) | Re-exports all RPP types for consumers that import from `@jingu/policy-core` |
+| [`jingu-policy-core`](https://github.com/ylu999/jingu-policy-core) | Re-exports all RPP types for consumers that import from `jingu-policy-core` |
 
 ---
 
