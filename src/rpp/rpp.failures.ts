@@ -88,9 +88,9 @@ export const RPP_FAILURE_DESCRIPTIONS: Record<RPPFailureCode, RPPFailureDescript
     example: "Action stage has only { type: 'rule', rule_id: 'RUL-002' } but no evidence ref showing what file/source/result grounds the action.",
   },
   RESPONSE_MISSING_GROUNDED_STEP: {
-    severity: "error",
-    description: "The response DerivedRef.from_steps does not include the decision or action step. Responses must trace to a decision or action — tracing only to interpretation or reasoning is insufficient because those steps do not represent concluded actions.",
-    example: "from_steps: ['s-interpretation'] — interpretation establishes context but does not authorize action. Include 's-decision' or 's-action'.",
+    severity: "warning",
+    description: "The response DerivedRef.from_steps does not include a decision or action step. Ideally responses should trace to a decision or action, but this is a strictness concern (Layer B), not a structural binding failure (Layer A).",
+    example: "from_steps: ['s-interpretation'] — interpretation establishes context but does not represent a concluded decision. Consider including 's-decision' or 's-action'.",
   },
   STEP_DERIVED_REF_FORBIDDEN: {
     severity: "error",
@@ -124,7 +124,7 @@ const HARD_FAILURE_CODES = new Set<RPPFailureCode>([
   "DANGLING_PROVENANCE_LINK",
   "EMPTY_PROVENANCE_LINK",
   "ACTION_NO_EVIDENCE",
-  "RESPONSE_MISSING_GROUNDED_STEP",
+  // RESPONSE_MISSING_GROUNDED_STEP is Layer B (strictness), not Layer A (binding) — demoted to warning
   "STEP_DERIVED_REF_FORBIDDEN",
   "UNKNOWN_RULE_ID",
   "UNKNOWN_METHOD_ID",

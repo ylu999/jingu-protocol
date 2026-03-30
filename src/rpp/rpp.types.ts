@@ -51,6 +51,7 @@ export type ResponseStep = {
 }
 
 export type RPPRecord = {
+  schema_version?: "rpp.v1"  // optional for backward compat; runtime validator enforces when present
   call_id: string
   session_id?: string
   call_sequence?: number
