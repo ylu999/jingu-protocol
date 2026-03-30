@@ -95,15 +95,17 @@ export function validateRPP(record: RPPRecord, policy?: RPPPolicy): RPPValidatio
     }
 
     // --- Check 4: SUPPORTS_TOO_VAGUE (warning) ---
-    // Checks structural completeness: supports must be a non-empty string.
-    // Does NOT check character count — length-based thresholds are string heuristics,
-    // not semantic validation. A one-word supports field is valid; an empty one is not.
+    // A supports field shorter than 8 chars is a heuristic filter: statistically,
+    // fewer than 8 chars cannot carry a meaningful claim description.
+    // Empty and whitespace-only are the most severe case; short-but-non-empty is also flagged.
+    const SUPPORTS_MIN_LENGTH = 8
     for (const ref of step.references ?? []) {
-      if (!ref.supports || ref.supports.trim() === "") {
+      const text = ref.supports?.trim() ?? ""
+      if (text.length < SUPPORTS_MIN_LENGTH) {
         allIssues.push({
           code: "SUPPORTS_TOO_VAGUE",
           stage,
-          detail: `Reference in stage "${stage}" has an empty 'supports' field. State what claim this reference supports.`,
+          detail: `Reference in stage "${stage}" has a 'supports' field that is too short (${text.length} chars, minimum ${SUPPORTS_MIN_LENGTH}). State what specific claim this reference supports.`,
         })
       }
     }
