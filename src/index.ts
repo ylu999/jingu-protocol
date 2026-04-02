@@ -19,3 +19,11 @@ export type { RPPFailureDescription } from "./rpp/rpp.failures.js"
 export { RPP_FAILURE_DESCRIPTIONS, isHardFailure } from "./rpp/rpp.failures.js"
 
 export { validateRPP } from "./rpp/rpp.validate.js"
+
+export type {
+  FailureType,
+  FailureSignal,
+  PatchFingerprint,
+  ExecutionFeedback,
+  RetryPlan,
+} from "./control-loop/types.js"
