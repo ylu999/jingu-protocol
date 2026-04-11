@@ -27,3 +27,15 @@ export type {
   ExecutionFeedback,
   RetryPlan,
 } from "./control-loop/types.js"
+
+// Bundle schema types
+export type {
+  BundleIdentity,
+  PrincipalSpec,
+  ContractSchema,
+  BundleSchema,
+} from "./bundle/index.js"
+
+export type { ValidationResult } from "./bundle/index.js"
+export { validateBundleSchema } from "./bundle/index.js"
+export { parseBundleIdentity, formatBundleIdentity } from "./bundle/index.js"

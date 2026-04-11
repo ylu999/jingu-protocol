@@ -2,4 +2,9 @@ export type { EvidenceRef, RuleRef, MethodRef, DerivedRef, Reference, CognitiveS
 export type { RPPFailureDescription } from "./rpp/rpp.failures.js";
 export { RPP_FAILURE_DESCRIPTIONS, isHardFailure } from "./rpp/rpp.failures.js";
 export { validateRPP } from "./rpp/rpp.validate.js";
+export type { FailureType, FailureSignal, PatchFingerprint, ExecutionFeedback, RetryPlan, } from "./control-loop/types.js";
+export type { BundleIdentity, PrincipalSpec, ContractSchema, BundleSchema, } from "./bundle/index.js";
+export type { ValidationResult } from "./bundle/index.js";
+export { validateBundleSchema } from "./bundle/index.js";
+export { parseBundleIdentity, formatBundleIdentity } from "./bundle/index.js";
 //# sourceMappingURL=index.d.ts.map
