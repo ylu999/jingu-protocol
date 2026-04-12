@@ -42,6 +42,7 @@ export type ResponseStep = {
     references: Reference[];
 };
 export type RPPRecord = {
+    schema_version?: "rpp.v1";
     call_id: string;
     session_id?: string;
     call_sequence?: number;
