@@ -20,10 +20,11 @@
     "build": "tsc -p tsconfig.json",
     "build:cjs": "tsc -p tsconfig.cjs.json && echo '{\"type\":\"commonjs\"}' > dist-cjs/package.json",
     "build:all": "npm run build && npm run build:cjs",
-    "test": "node --test dist/src/**/*.test.js"
+    "test": "node --test dist/src/**/*.test.js",
+    "check:no-alias": "node scripts/check-no-alias.mjs"
   },
   "devDependencies": {
+    "@types/node": "^25.6.0",
     "typescript": "^5.4.0"
-  },
-  "dependencies": {}
+  }
 }
