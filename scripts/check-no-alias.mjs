@@ -28,6 +28,11 @@ const ALLOWLISTED_FILES = [
   // CDP v1 taxonomy — completely separate principal/type system, not cognition-layer symbols
   "jingu-policy-core/src/cognition/principals/taxonomy.ts",
   "jingu-policy-core/src/cognition/taxonomy.ts",
+  // LLM output boundary adapters — the ONE place where non-canonical phase strings are
+  // legitimately referenced, because LLM output may contain "ANALYSIS" instead of "ANALYZE".
+  // These files normalize at the system boundary; all internal code uses canonical only.
+  "jingu-swebench/scripts/declaration_extractor.py",
+  "jingu-swebench/scripts/principal_inference.py",
 ];
 
 /**
