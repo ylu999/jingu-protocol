@@ -39,3 +39,12 @@ export type {
 export type { ValidationResult } from "./bundle/index.js"
 export { validateBundleSchema } from "./bundle/index.js"
 export { parseBundleIdentity, formatBundleIdentity } from "./bundle/index.js"
+
+// Canonical symbol types and validators
+export type { Phase, Principal, Subtype, Verdict } from "./symbols/index.js"
+export {
+  ALL_PHASES, assertPhase,
+  ALL_PRINCIPALS, assertPrincipal,
+  ALL_SUBTYPES, assertSubtype,
+  ALL_VERDICTS, assertVerdict,
+} from "./symbols/index.js"
